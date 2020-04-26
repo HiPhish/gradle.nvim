@@ -1,0 +1,8 @@
+# Ignore directories created by Gradle
+bin
+build
+.gradle
+# Ignore Gradle wrapper
+gradle/
+gradlew
+gradlew.bat

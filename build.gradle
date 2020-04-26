@@ -1,0 +1,56 @@
+plugins {
+	// Apply the java plugin to add support for Java
+	id 'java'
+
+	// Apply the application plugin to add support for building a CLI application.
+	id 'application'
+}
+
+// Explicitly name the version of the Gradle wrapper for reproducibility (we do
+// not track the wrapper through VCS, see the INSTALL file for the rationale)
+wrapper.gradleVersion = "$gradleWrapperVersion"
+
+repositories {
+	// Use jcenter for resolving dependencies.
+	// You can declare any Maven/Ivy/file repository here.
+	jcenter()
+	maven {
+		url 'https://repo.gradle.org/gradle/libs-releases'
+	}
+	maven {
+	 	url 'https://oss.sonatype.org/content/repositories/snapshots/' 
+	}
+}
+
+dependencies {
+	// This dependency is used by the application.
+	implementation 'com.google.guava:guava:28.1-jre'
+
+	// Neovim API client library
+	implementation "com.ensarsarajcic.neovim.java:neovim-api:$javaNeovimVersion"
+	implementation "com.ensarsarajcic.neovim.java:core-rpc:$javaNeovimVersion"
+	// Handler annotations support
+	implementation "com.ensarsarajcic.neovim.java:handler-annotations:$javaNeovimVersion"
+
+	// Gradle Tooling API
+	implementation "org.gradle:gradle-tooling-api:$toolingApiVersion"
+    // The tooling API need an SLF4J implementation available at runtime,
+    // replace this with any other implementation
+    runtimeOnly 'org.slf4j:slf4j-simple:1.7.10'
+
+	// Use JUnit Jupiter API for testing.
+	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.2'
+
+	// Use JUnit Jupiter Engine for testing.
+	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.5.2'
+}
+
+application {
+	// Define the main class for the application.
+	mainClassName = 'Tooling'
+}
+
+test {
+	// Use junit platform for unit tests
+	useJUnitPlatform()
+}
