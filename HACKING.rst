@@ -14,7 +14,7 @@ API. To connect Neovim and Gradle we need to write a Java remote plugin which
 acts as a mediator between the two.
 
 The following illustration gives an overview of how the individual parts
-connect. The communcation protocol is on top of the arrows, the underlying
+connect. The communication protocol is on top of the arrows, the underlying
 transport mechanism is beneath the arrows.
 
 .. code-block::
