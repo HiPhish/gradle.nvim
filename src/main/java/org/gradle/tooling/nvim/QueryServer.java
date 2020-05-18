@@ -53,6 +53,20 @@ public class QueryServer {
 			.getAll();
 	}
 
+	/** Run a given task in a given project.
+	 *
+	 * @param projectPath Absolute path to the project as a string.
+	 * @param taksName Name of the task to run.
+	 */
+	public void runTask(String projectPath, String taskName) {
+		var projectConnection = fetchProjectConnection(projectPath);
+		var buildLauncher = projectConnection.newBuild().forTasks(taskName);
+
+		// TODO: get feedback at the task is running, display it in Neovim
+		// Must investigate the more complex options which the API provides.
+		buildLauncher.run();
+	}
+
 	/** Establish a connection to a project with the given file path.
 	 * <p>
 	 * This method tries to respect the user's personal settings.

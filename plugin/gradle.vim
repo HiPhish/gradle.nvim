@@ -29,6 +29,11 @@ function! s:list_tasks(tasks)
 	endfor
 endfunction
 
+function! s:run_task(task)
+	echo '[stub] Running ' .. a:task
+	call rpcrequest(s:job_id, 'run-task', getcwd(), a:task)
+endfunction
+
 
 " ===[ SETUP ]=================================================================
 " Entry point. Initialise RPC
@@ -62,3 +67,4 @@ call s:connect()
 command! GradleHandshake :echo rpcrequest(s:job_id, 'handshake')
 command! GradleThrow :echo rpcrequest(s:job_id, 'throw-up')
 command! GradleTasks :call s:list_tasks(rpcrequest(s:job_id, 'get-tasks', getcwd()))
+command! -nargs=1 GradleRun :call s:run_task('<args>')

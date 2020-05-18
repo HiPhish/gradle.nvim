@@ -87,6 +87,18 @@ public class NvimConnection {
 		}
 	}
 
+	@NeovimRequestHandler("run-task")
+	public void runTask(RequestMessage request) throws NeovimRequestException {
+		try {
+			var projectPath = (String) request.getArguments().get(0);
+			var taskName    = (String) request.getArguments().get(1);
+
+			queryServer.runTask(projectPath, taskName);
+		} catch (Exception e) {
+			throw new NeovimRequestException(e.getMessage());
+		}
+	}
+
 	/** Perform a handshake with Neovim to confirm that the connection is
 	 * working.
 	 * <p>
