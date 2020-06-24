@@ -59,8 +59,8 @@ public class QueryServer {
 	 * @param taksName Name of the task to run.
 	 */
 	public void runTask(String projectPath, String taskName) {
-		var projectConnection = fetchProjectConnection(projectPath);
-		var buildLauncher = projectConnection.newBuild().forTasks(taskName);
+		final var projectConnection = fetchProjectConnection(projectPath);
+		final var buildLauncher = projectConnection.newBuild().forTasks(taskName);
 
 		// TODO: get feedback at the task is running, display it in Neovim
 		// Must investigate the more complex options which the API provides.
@@ -77,17 +77,18 @@ public class QueryServer {
 	 */
 	private ProjectConnection connectToProject(String path) {
 		Objects.requireNonNull(path, "Path to a project must be non-null");
-		var projectDir = new File(path);
+
+		final var projectDir = new File(path);
 		if (!projectDir.exists()) {
 			// TODO
 		}
-		var connector = GradleConnector.newConnector().forProjectDirectory(projectDir);
+		final var connector = GradleConnector.newConnector().forProjectDirectory(projectDir);
 		// Respect the user's custom environment variable, see
 		// https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_environment_variables
 		Optional.ofNullable(System.getenv("GRADLE_USER_HOME"))
 			.map(File::new)
 			.ifPresent(connector::useGradleUserHomeDir);
-		var projectConnection = connector.connect();
+		final var projectConnection = connector.connect();
 		return projectConnection;
 	}
 

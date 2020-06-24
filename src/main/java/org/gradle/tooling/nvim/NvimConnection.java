@@ -37,7 +37,7 @@ public class NvimConnection {
 
 	private NvimConnection() {
 		this.rpcClient = RpcClient.getDefaultAsyncInstance();
-		var neovimHandlerManager = new NeovimHandlerManager();
+		final var neovimHandlerManager = new NeovimHandlerManager();
 		queryServer = new QueryServer(this);
 
 		neovimHandlerManager.registerNeovimHandler(this);
@@ -52,7 +52,7 @@ public class NvimConnection {
 	 * @return The RPC client object.
 	 */
 	public static RpcClient establish() {
-		NvimConnection nvimConnection = new NvimConnection();
+		final var nvimConnection = new NvimConnection();
 		return nvimConnection.rpcClient;
 	}
 
@@ -68,14 +68,14 @@ public class NvimConnection {
 	@NeovimRequestHandler("get-tasks")
 	public List<List<String>> getTasks(RequestMessage request) throws NeovimRequestException {
 		final Function<GradleTask, List<String>> taskToSpec = task -> {
-			var name = task.getName();
-			var desc = Optional.ofNullable(task.getDescription()).orElse("");
-			var path = task.getPath();
-			var group = task.getGroup();
+			final var name = task.getName();
+			final var desc = Optional.of(task).map(GradleTask::getDescription).orElse("");
+			final var path = task.getPath();
+			final var group = task.getGroup();
 			return List.of(name, desc, path, group);
 		};
 		try {
-			var projectPath = (String) request.getArguments().get(0);
+			final var projectPath = (String) request.getArguments().get(0);
 			return queryServer
 				.getTasks(projectPath)
 				.stream()
@@ -90,8 +90,8 @@ public class NvimConnection {
 	@NeovimRequestHandler("run-task")
 	public void runTask(RequestMessage request) throws NeovimRequestException {
 		try {
-			var projectPath = (String) request.getArguments().get(0);
-			var taskName    = (String) request.getArguments().get(1);
+			final var projectPath = (String) request.getArguments().get(0);
+			final var taskName    = (String) request.getArguments().get(1);
 
 			queryServer.runTask(projectPath, taskName);
 		} catch (Exception e) {
