@@ -24,7 +24,7 @@ transport mechanism is beneath the arrows.
    +--------+    Standard IO    +-------------+    Java library    +--------+
 
 The remote plugin is a Java application and needs to be compiled before the
-plugin can be run. We use of course Gradle as the build system.
+plugin can be run. We use Gradle as the build system of course.
 
 
 Bootstrapping process
