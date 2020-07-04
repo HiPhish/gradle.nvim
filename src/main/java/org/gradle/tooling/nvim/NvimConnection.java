@@ -36,10 +36,10 @@ public class NvimConnection {
 	private RpcClient rpcClient;
 
 	private NvimConnection() {
-		this.rpcClient = RpcClient.getDefaultAsyncInstance();
-		final var neovimHandlerManager = new NeovimHandlerManager();
+		rpcClient = RpcClient.getDefaultAsyncInstance();
 		queryServer = new QueryServer(this);
 
+		final var neovimHandlerManager = new NeovimHandlerManager();
 		neovimHandlerManager.registerNeovimHandler(this);
 		neovimHandlerManager.attachToStream(rpcClient);
 	}
@@ -55,6 +55,10 @@ public class NvimConnection {
 		final var nvimConnection = new NvimConnection();
 		return nvimConnection.rpcClient;
 	}
+
+	// The following methods implement Neovim request handlers. In the future
+	// it might make sense to extract each handler into an individual class if
+	// there is too many of them, but for now this is fine.
 
 	/** Return a list of task specifications to Neovim.
 	 * <p>

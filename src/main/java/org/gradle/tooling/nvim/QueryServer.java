@@ -1,6 +1,7 @@
 package org.gradle.tooling.nvim;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class QueryServer {
 	 * <p>
 	 * Maps the path of a project (as a {@code File} instance) to a project
 	 * connection. When a new project needs to be queried add it to the map.
-	 * When a project is "close" (whatever that might mean) we need to close
+	 * When a project is "closed" (whatever that might mean) we need to close
 	 * the connection and remove the entry.
 	 */
 	private Map<String, ProjectConnection> projects = new HashMap<>();
@@ -46,7 +47,7 @@ public class QueryServer {
 	 * @param projectPath Absolute path to the project as a string.
 	 * @return All tasks defined for the project.
 	 */
-	public List<? extends GradleTask> getTasks(String projectPath) {
+	public List<? extends GradleTask> getTasks(String projectPath) throws FileNotFoundException {
 		return fetchProjectConnection(projectPath)
 			.getModel(GradleProject.class)
 			.getTasks()
@@ -58,7 +59,7 @@ public class QueryServer {
 	 * @param projectPath Absolute path to the project as a string.
 	 * @param taksName Name of the task to run.
 	 */
-	public void runTask(String projectPath, String taskName) {
+	public void runTask(String projectPath, String taskName) throws FileNotFoundException {
 		final var projectConnection = fetchProjectConnection(projectPath);
 		final var buildLauncher = projectConnection.newBuild().forTasks(taskName);
 
@@ -75,12 +76,12 @@ public class QueryServer {
 	 *
 	 * @return A new connection object.
 	 */
-	private ProjectConnection connectToProject(String path) {
+	private ProjectConnection connectToProject(String path) throws FileNotFoundException {
 		Objects.requireNonNull(path, "Path to a project must be non-null");
 
 		final var projectDir = new File(path);
 		if (!projectDir.exists()) {
-			// TODO
+			throw new FileNotFoundException(String.format("Project '%s' not found", path));
 		}
 		final var connector = GradleConnector.newConnector().forProjectDirectory(projectDir);
 		// Respect the user's custom environment variable, see
@@ -102,8 +103,12 @@ public class QueryServer {
 	 *
 	 * @return An existing connection, or a new connection if none exists yet.
 	 */
-	private ProjectConnection fetchProjectConnection(String path) {
+	private ProjectConnection fetchProjectConnection(String path) throws FileNotFoundException {
 		Objects.requireNonNull(path, "Path string to project must not be null");
-		return projects.computeIfAbsent(path, this::connectToProject);
+
+		if (!projects.containsKey(path)) {
+			projects.put(path, connectToProject(path));
+		}
+		return projects.get(path);
 	}
 }
