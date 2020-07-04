@@ -36,7 +36,7 @@ public class QueryServer {
 	 * When a project is "closed" (whatever that might mean) we need to close
 	 * the connection and remove the entry.
 	 */
-	private Map<String, ProjectConnection> projects = new HashMap<>();
+	private Map<File, ProjectConnection> projects = new HashMap<>();
 
 	public QueryServer(NvimConnection nvimConnection) {
 		this.nvimConnection = nvimConnection;
@@ -56,41 +56,17 @@ public class QueryServer {
 
 	/** Run a given task in a given project.
 	 *
-	 * @param projectPath Absolute path to the project as a string.
-	 * @param taksName Name of the task to run.
+	 * @param path Absolute path to the project as a string.
+	 * @param task Name of the task to run.
 	 */
-	public void runTask(String projectPath, String taskName) throws FileNotFoundException {
-		final var projectConnection = fetchProjectConnection(projectPath);
-		final var buildLauncher = projectConnection.newBuild().forTasks(taskName);
+	public void runTask(String path, String task) throws FileNotFoundException {
+		final var buildLauncher = fetchProjectConnection(path)
+			.newBuild()
+			.forTasks(task);
 
 		// TODO: get feedback at the task is running, display it in Neovim
 		// Must investigate the more complex options which the API provides.
 		buildLauncher.run();
-	}
-
-	/** Establish a connection to a project with the given file path.
-	 * <p>
-	 * This method tries to respect the user's personal settings.
-	 *
-	 * @param projectPath Absolute path to the project as a string.
-	 *
-	 * @return A new connection object.
-	 */
-	private ProjectConnection connectToProject(String path) throws FileNotFoundException {
-		Objects.requireNonNull(path, "Path to a project must be non-null");
-
-		final var projectDir = new File(path);
-		if (!projectDir.exists()) {
-			throw new FileNotFoundException(String.format("Project '%s' not found", path));
-		}
-		final var connector = GradleConnector.newConnector().forProjectDirectory(projectDir);
-		// Respect the user's custom environment variable, see
-		// https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_environment_variables
-		Optional.ofNullable(System.getenv("GRADLE_USER_HOME"))
-			.map(File::new)
-			.ifPresent(connector::useGradleUserHomeDir);
-		final var projectConnection = connector.connect();
-		return projectConnection;
 	}
 
 	/** Fetch the project connection object for a given project path.
@@ -106,9 +82,34 @@ public class QueryServer {
 	private ProjectConnection fetchProjectConnection(String path) throws FileNotFoundException {
 		Objects.requireNonNull(path, "Path string to project must not be null");
 
-		if (!projects.containsKey(path)) {
-			projects.put(path, connectToProject(path));
+		final var project = new File(path);
+		if (!project.exists()) {
+			throw new FileNotFoundException(String.format("Project '%s' not found", path));
 		}
-		return projects.get(path);
+
+		return projects.computeIfAbsent(project, this::connectToProject);
+	}
+
+	/** Establish a connection to a project with the given file path.
+	 * <p>
+	 * This method tries to respect the user's personal settings.
+	 *
+	 * @param projectPath Absolute path to the project as a string.
+	 *
+	 * @return A new connection object.
+	 */
+	private ProjectConnection connectToProject(File project) {
+		Objects.requireNonNull(project, "Project path must be non-null");
+
+		final var connector = GradleConnector.newConnector()
+			.forProjectDirectory(project);
+
+		// Respect the user's custom environment variable, see
+		// https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_environment_variables
+		Optional.ofNullable(System.getenv("GRADLE_USER_HOME"))
+			.map(File::new)
+			.ifPresent(connector::useGradleUserHomeDir);
+
+		return connector.connect();
 	}
 }
