@@ -19,6 +19,7 @@ import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.nvim.handler.GetTasks;
 import org.gradle.tooling.nvim.handler.Handshake;
 import org.gradle.tooling.nvim.handler.NoHandlerRegistered;
+import org.gradle.tooling.nvim.handler.NoOp;
 import org.gradle.tooling.nvim.handler.RunTask;
 import org.gradle.tooling.nvim.handler.ThrowUp;
 
@@ -49,6 +50,7 @@ public class NvimConnection {
 	private Map<File, ProjectConnection> projects = new HashMap<>();
 
 	private Map<String, Class<? extends RequestHandler>> requestHandlers = Map.of(
+		"no-op", NoOp.class,
 		"get-tasks", GetTasks.class,
 		"handshake", Handshake.class,
 		"throw-up", ThrowUp.class,

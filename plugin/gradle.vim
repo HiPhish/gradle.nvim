@@ -31,7 +31,7 @@ endfunction
 
 function! s:run_task(task)
 	echo '[stub] Running ' .. a:task
-	call rpcrequest(s:job_id, 'run-task', getcwd(), a:task)
+	call rpcrequest(s:job_id, 'perform-request', 'run-task', getcwd(), a:task)
 endfunction
 
 
@@ -64,6 +64,7 @@ endfunction
 call s:connect()
 
 " Some commands for playing around with
+command! GradleNoOp :echo rpcrequest(s:job_id, 'perform-request', 'no-op')
 command! GradleHandshake :echo rpcrequest(s:job_id, 'perform-request', 'handshake')
 command! GradleThrow :echo rpcrequest(s:job_id, 'perform-request', 'throw-up')
 command! GradleTasks :call s:list_tasks(rpcrequest(s:job_id, 'perform-request', 'get-tasks', getcwd()))
