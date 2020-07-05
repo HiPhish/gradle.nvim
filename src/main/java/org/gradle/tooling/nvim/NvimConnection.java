@@ -25,12 +25,12 @@ import org.gradle.tooling.nvim.handler.ThrowUp;
 
 /** A connection to the controlling Neovim instance.
  * <p>
- * The process needs to be able to receive and send messages from and to
- * Neovim; this class implements the communication layer between the two.
- * Communication between Neovim and Gradle happens through this class.
+ * The process needs to be able to receive and send messages from and to Neovim; this class
+ * implements the communication layer between the two.  Communication between Neovim and Gradle
+ * happens through this class.
  * <p>
- * The main purpose of this class is to handle requests and notifications from
- * Neovim by passing them on to the appropriate Gradle methods.
+ * The main purpose of this class is to handle requests and notifications from Neovim by passing
+ * them on to the appropriate Gradle methods.
  */
 public class NvimConnection {
 
@@ -67,8 +67,7 @@ public class NvimConnection {
 
 	/** Establishes a new connection to Neovim from the current process.
 	 *
-	 * @param rpcConnection  The connection object which is used for
-	 * communication with Neovim.
+	 * @param rpcConnection  The connection object which is used for communication with Neovim.
 	 *
 	 * @return The RPC client object.
 	 */
