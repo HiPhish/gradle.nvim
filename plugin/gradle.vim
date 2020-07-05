@@ -64,7 +64,7 @@ endfunction
 call s:connect()
 
 " Some commands for playing around with
-command! GradleHandshake :echo rpcrequest(s:job_id, 'handshake')
-command! GradleThrow :echo rpcrequest(s:job_id, 'throw-up')
-command! GradleTasks :call s:list_tasks(rpcrequest(s:job_id, 'get-tasks', getcwd()))
+command! GradleHandshake :echo rpcrequest(s:job_id, 'perform-request', 'handshake')
+command! GradleThrow :echo rpcrequest(s:job_id, 'perform-request', 'throw-up')
+command! GradleTasks :call s:list_tasks(rpcrequest(s:job_id, 'perform-request', 'get-tasks', getcwd()))
 command! -nargs=1 GradleRun :call s:run_task('<args>')

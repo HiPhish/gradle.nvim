@@ -1,9 +1,12 @@
 package org.gradle.tooling.nvim;
 
-import java.util.List;
+import java.io.FileNotFoundException;
+import java.lang.reflect.InvocationTargetException;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.ensarsarajcic.neovim.java.corerpc.client.RpcClient;
 import com.ensarsarajcic.neovim.java.corerpc.message.RequestMessage;
@@ -11,7 +14,13 @@ import com.ensarsarajcic.neovim.java.handler.NeovimHandlerManager;
 import com.ensarsarajcic.neovim.java.handler.annotations.NeovimRequestHandler;
 import com.ensarsarajcic.neovim.java.handler.errors.NeovimRequestException;
 
-import org.gradle.tooling.model.GradleTask;
+import org.gradle.tooling.GradleConnector;
+import org.gradle.tooling.ProjectConnection;
+import org.gradle.tooling.nvim.handler.GetTasks;
+import org.gradle.tooling.nvim.handler.Handshake;
+import org.gradle.tooling.nvim.handler.NoHandlerRegistered;
+import org.gradle.tooling.nvim.handler.RunTask;
+import org.gradle.tooling.nvim.handler.ThrowUp;
 
 /** A connection to the controlling Neovim instance.
  * <p>
@@ -23,10 +32,6 @@ import org.gradle.tooling.model.GradleTask;
  * Neovim by passing them on to the appropriate Gradle methods.
  */
 public class NvimConnection {
-	/** Connection to a Gradle instance; will have access to this Neovim
-	 * connection.
-	 */
-	private QueryServer queryServer;
 
 	/** RPC client implementation which the JVM process can use for
 	 * communication with Neovim.
@@ -35,9 +40,23 @@ public class NvimConnection {
 	 */
 	private RpcClient rpcClient;
 
+	/** Projects currently beings managed by the server.
+	 * <p>
+	 * Maps the path of a project (as a {@code File} instance) to a project connection. When a new
+	 * project needs to be queried add it to the map.  When a project is "closed" (whatever that
+	 * might mean) we need to close the connection and remove the entry.
+	 */
+	private Map<File, ProjectConnection> projects = new HashMap<>();
+
+	private Map<String, Class<? extends RequestHandler>> requestHandlers = Map.of(
+		"get-tasks", GetTasks.class,
+		"handshake", Handshake.class,
+		"throw-up", ThrowUp.class,
+		"run-task", RunTask.class
+	);
+
 	private NvimConnection() {
 		rpcClient = RpcClient.getDefaultAsyncInstance();
-		queryServer = new QueryServer(this);
 
 		final var neovimHandlerManager = new NeovimHandlerManager();
 		neovimHandlerManager.registerNeovimHandler(this);
@@ -56,81 +75,89 @@ public class NvimConnection {
 		return nvimConnection.rpcClient;
 	}
 
-	// The following methods implement Neovim request handlers. In the future
-	// it might make sense to extract each handler into an individual class if
-	// there is too many of them, but for now this is fine.
-
-	/** Return a list of task specifications to Neovim.
+	/** Handle an incoming Neovim request to Gradle by dispatching dynamically to a suitable request
+	 * handler.
 	 * <p>
-	 * A task specification is a list of strings; the order of strings must be
-	 * the same across all specifications. The details are yet to be decided
-	 * upon.
+	 * The request handlers must be registered at compile time. The first argument of the incoming
+	 * message is the name of the request (a string), the remaining arguments are arguments to the
+	 * particular request (all strings).
 	 *
-	 * @param request The request object, is ignores.
-	 * @return A list of task specifications.
+	 * @param message  The incoming Neovim message
+	 * @return The result object from the handler, will be sent back to Neovim as the response.
 	 */
-	@NeovimRequestHandler("get-tasks")
-	public List<List<String>> getTasks(RequestMessage request) throws NeovimRequestException {
-		final Function<GradleTask, List<String>> taskToSpec = task -> {
-			final var name = task.getName();
-			final var desc = Optional.of(task).map(GradleTask::getDescription).orElse("");
-			final var path = task.getPath();
-			final var group = task.getGroup();
-			return List.of(name, desc, path, group);
-		};
+	@NeovimRequestHandler("perform-request")
+	public Object handleRequest(RequestMessage message) throws NeovimRequestException {
+		final var args = message.getArguments();
+		final var request = (String) args.get(0);
+		final var handler = requestHandlers.getOrDefault(request, NoHandlerRegistered.class);
+
 		try {
-			final var projectPath = (String) request.getArguments().get(0);
-			return queryServer
-				.getTasks(projectPath)
-				.stream()
-				.filter(GradleTask::isPublic)
-				.map(taskToSpec)
-				.collect(Collectors.toList());
-		} catch (Exception e) {
-			throw new NeovimRequestException(e.getMessage());
+			final var handlerInstance = handler
+				.getDeclaredConstructor(NvimConnection.class)
+				.newInstance(this);
+
+			// Convert the remainder of the arguments to a string array. I have not found a cleaner
+			// way of doing this without tripping up Java's type checker.
+			final var requestArgs = new String[args.size() - 1];
+			for (int i = 1; i < args.size(); ++i) {
+				requestArgs[i - 1] = (String) args.get(i);
+			}
+
+			return handlerInstance.handle(request, requestArgs);
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();  // TODO: constructor not defined
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();  // TODO: constructor threw an error
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();  // TODO: constructor not accessible
+		} catch (InstantiationException e) {
+			e.printStackTrace();  // TODO: tried to instantiate an abstract class
 		}
+
+		final var msg = "An exception occurred while processing the request";
+		throw new NeovimRequestException(msg);
 	}
 
-	@NeovimRequestHandler("run-task")
-	public void runTask(RequestMessage request) throws NeovimRequestException {
-		try {
-			final var projectPath = (String) request.getArguments().get(0);
-			final var taskName    = (String) request.getArguments().get(1);
+	/** Fetch the project connection object for a given project path.
+	 * <p>
+	 * If there is no connection to the path a new connection will be opened and stored for later
+	 * use. If a connection had already been opened it is returned.
+	 *
+	 * @param projectPath Absolute path to the project as a string.
+	 *
+	 * @return An existing connection, or a new connection if none exists yet.
+	 */
+	public ProjectConnection fetchProjectConnection(String path) throws FileNotFoundException {
+		Objects.requireNonNull(path, "Path string to project must not be null");
 
-			queryServer.runTask(projectPath, taskName);
-		} catch (Exception e) {
-			throw new NeovimRequestException(e.getMessage());
+		final var project = new File(path);
+		if (!project.exists()) {
+			throw new FileNotFoundException(String.format("Project '%s' not found", path));
 		}
+
+		return projects.computeIfAbsent(project, this::connectToProject);
 	}
 
-	/** Perform a handshake with Neovim to confirm that the connection is
-	 * working.
+	/** Establish a connection to a project with the given file path.
 	 * <p>
-	 * A handshake request does not do anything useful, it only performs the
-	 * bare minimum to confirm that the connection has been established and
-	 * that requests are handled properly. Use it to verify that everything is
-	 * connected properly first when diagnosing an issue.
+	 * This method tries to respect the user's personal settings.
 	 *
-	 * @param request The request object, will be ignored.
-	 * @return The constant string "OK".
+	 * @param projectPath Absolute path to the project as a string.
+	 *
+	 * @return A new connection object.
 	 */
-	@NeovimRequestHandler("handshake")
-	public String performHandshake(RequestMessage request) throws NeovimRequestException {
-		return "OK";
-	}
+	private ProjectConnection connectToProject(File project) {
+		Objects.requireNonNull(project, "Project path must be non-null");
 
-	/** Intentionally throw an exception to Neovim.
-	 * <p>
-	 * Always throws an exception; useless in production, but good for ensuring
-	 * that exceptions are indeed thrown.
-	 *
-	 * @param request The request object, will be ignored.
-	 * @throws NeovimRequestException - Always thrown
-	 * @return The constant string "OK".
-	 */
-	@NeovimRequestHandler("throw-up")
-	public String throwUp(RequestMessage request) throws NeovimRequestException {
-		final var message = "Exception intentionally thrown.";
-		throw new NeovimRequestException(message);
+		final var connector = GradleConnector.newConnector()
+			.forProjectDirectory(project);
+
+		// Respect the user's custom environment variable, see
+		// https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_environment_variables
+		Optional.ofNullable(System.getenv("GRADLE_USER_HOME"))
+			.map(File::new)
+			.ifPresent(connector::useGradleUserHomeDir);
+
+		return connector.connect();
 	}
 }

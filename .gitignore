@@ -1,10 +1,10 @@
 # Created by Neovim
-doc/tags
+/doc/tags
 # Created by Gradle
-bin
-build
-.gradle
+/bin
+/build
+/.gradle
 # Gradle wrapper
-gradle/
-gradlew
-gradlew.bat
+/gradle/
+/gradlew
+/gradlew.bat
