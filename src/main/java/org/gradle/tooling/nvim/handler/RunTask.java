@@ -13,10 +13,10 @@ public class RunTask extends RequestHandler {
 	}
 
 	@Override
-	public Object handle(String request, String ... args) throws NeovimRequestException {
+	public Object handle(String request, Object ... args) throws NeovimRequestException {
 		try {
-			final var path = args[0];
-			final var task = args[1];
+			final var path = (String) args[0];
+			final var task = (String) args[1];
 
 			final var buildLauncher = connection.fetchProjectConnection(path)
 				.newBuild()

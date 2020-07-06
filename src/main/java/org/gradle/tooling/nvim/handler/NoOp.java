@@ -12,7 +12,7 @@ public class NoOp extends RequestHandler {
 	}
 
 	@Override
-	public Object handle(String request, String ... args) {
+	public Object handle(String request, Object ... args) {
 		return null;
 	}
 }

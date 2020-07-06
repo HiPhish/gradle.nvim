@@ -23,7 +23,7 @@ public class GetTasks extends RequestHandler {
 	}
 
 	@Override
-	public Object handle(String request, String ... args) throws NeovimRequestException {
+	public Object handle(String request, Object ... args) throws NeovimRequestException {
 		try {
 			final var projectPath = (String) args[0];
 			return getTasks(projectPath)

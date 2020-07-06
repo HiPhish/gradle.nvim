@@ -17,7 +17,7 @@ public class Handshake extends RequestHandler {
 	}
 
 	@Override
-	public Object handle(String request, String ... args) throws NeovimRequestException {
+	public Object handle(String request, Object ... args) throws NeovimRequestException {
 		return "OK";
 	}
 }

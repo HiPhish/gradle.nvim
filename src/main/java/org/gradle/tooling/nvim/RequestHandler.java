@@ -23,5 +23,5 @@ public abstract class RequestHandler {
 	 * @param args Arguments of the request, if any.
 	 * @return Result of the request.
 	 */
-	public abstract Object handle(String request, String ... args) throws NeovimRequestException;
+	public abstract Object handle(String request, Object ... args) throws NeovimRequestException;
 }

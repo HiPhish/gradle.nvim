@@ -14,7 +14,7 @@ public class NoHandlerRegistered extends RequestHandler {
 	/**
 	 * Always throws an error saying that there is no request handler.
 	 */
-	public Object handle(String request, String ... args) throws NeovimRequestException {
+	public Object handle(String request, Object ... args) throws NeovimRequestException {
 		final var message = String.format("No handler implemented for request '%s'", request);
 		throw new NeovimRequestException(message);
 	}

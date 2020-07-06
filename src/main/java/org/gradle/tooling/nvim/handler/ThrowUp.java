@@ -16,7 +16,7 @@ public class ThrowUp extends RequestHandler {
 	}
 	
 	@Override
-	public Object handle(String request, String ... args) throws NeovimRequestException {
+	public Object handle(String request, Object ... args) throws NeovimRequestException {
 		final var message = "Exception intentionally thrown.";
 		throw new NeovimRequestException(message);
 	}

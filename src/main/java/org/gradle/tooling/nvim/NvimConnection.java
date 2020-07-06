@@ -88,21 +88,15 @@ public class NvimConnection {
 	 */
 	@NeovimRequestHandler("perform-request")
 	public Object handleRequest(RequestMessage message) throws NeovimRequestException {
-		final var args = message.getArguments();
-		final var request = (String) args.get(0);
-		final var handler = requestHandlers.getOrDefault(request, NoHandlerRegistered.class);
-
 		try {
+			final var args = message.getArguments();
+			final var request = (String) args.get(0);
+			final var handler = requestHandlers.getOrDefault(request, NoHandlerRegistered.class);
+
+			final var requestArgs =  args.subList(1, args.size()).toArray();
 			final var handlerInstance = handler
 				.getDeclaredConstructor(NvimConnection.class)
 				.newInstance(this);
-
-			// Convert the remainder of the arguments to a string array. I have not found a cleaner
-			// way of doing this without tripping up Java's type checker.
-			final var requestArgs = new String[args.size() - 1];
-			for (int i = 1; i < args.size(); ++i) {
-				requestArgs[i - 1] = (String) args.get(i);
-			}
 
 			return handlerInstance.handle(request, requestArgs);
 		} catch (NoSuchMethodException e) {
@@ -113,6 +107,8 @@ public class NvimConnection {
 			e.printStackTrace();  // TODO: constructor not accessible
 		} catch (InstantiationException e) {
 			e.printStackTrace();  // TODO: tried to instantiate an abstract class
+		} catch (ClassCastException e) {
+			e.printStackTrace();  // TODO: failed a cast (usually an argument)
 		}
 
 		final var msg = "An exception occurred while processing the request";
