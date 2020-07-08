@@ -37,22 +37,13 @@ launches the compiled remote plugin. The Vim-side communicates over standard
 input and -output with the remote plugin via RPC.
 
 
-Connection and query server
-###########################
+Data-driven request handlers
+############################
 
-We can split the architecture of the remote plugin into two parts: the Neovim
-connection and the Gradle query server. The purpose of the connection is to
-manage the connection to Neovim. This means the state of the connection itself,
-receiving messages from Neovim, sending messages out, and passing requests to
-the query server.
-
-The query server is responsible for issuing queries to Gradle. When the
-connection receives a request message from Neovim it calls a corresponding
-method from the query server, which then uses the Gradle API to get Gradle to
-do something.
-
-Splitting things up like this allows us to separate communication with one of
-the external processes from communication with the other external process.
+Handling requests is done in a data-driven manner: every request name maps to a
+handler class. Each handler class has a method for handling a request with
+arguments. At runtime the request is dynamically dispatched to the
+corresponding handler class.
 
 
 Further reading
