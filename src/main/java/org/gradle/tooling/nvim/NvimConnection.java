@@ -1,14 +1,19 @@
 package org.gradle.tooling.nvim;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import com.ensarsarajcic.neovim.java.corerpc.client.RpcClient;
+import com.ensarsarajcic.neovim.java.corerpc.message.NotificationMessage;
 import com.ensarsarajcic.neovim.java.corerpc.message.RequestMessage;
 import com.ensarsarajcic.neovim.java.handler.NeovimHandlerManager;
 import com.ensarsarajcic.neovim.java.handler.annotations.NeovimRequestHandler;
@@ -133,6 +138,19 @@ public class NvimConnection {
 		}
 
 		return projects.computeIfAbsent(project, this::connectToProject);
+	}
+
+	/** Send a notification to Neovim.
+	 *
+	 * @param method  Method of the notification message.
+	 * @param args  Arguments of the notification.
+	 */
+	public void notify(String method, Object ... args) throws IOException {
+		final var message = new NotificationMessage.Builder(method)
+			.addArguments(new ArrayList<>(Arrays.asList(args)))
+			.build();
+
+		rpcClient.send(message);
 	}
 
 	/** Establish a connection to a project with the given file path.
