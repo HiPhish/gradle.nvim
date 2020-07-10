@@ -39,8 +39,7 @@ import org.gradle.tooling.nvim.handler.ThrowUp;
  */
 public class NvimConnection {
 
-	/** RPC client implementation which the JVM process can use for
-	 * communication with Neovim.
+	/** RPC client implementation which the JVM process can use for communication with Neovim.
 	 * <p>
 	 * This is the part which will be exposed to the outside.
 	 */
@@ -91,7 +90,7 @@ public class NvimConnection {
 	 * @param message  The incoming Neovim message
 	 * @return The result object from the handler, will be sent back to Neovim as the response.
 	 */
-	@NeovimRequestHandler("perform-request")
+	@NeovimRequestHandler("request")
 	public Object handleRequest(RequestMessage message) throws NeovimRequestException {
 		try {
 			final var args = message.getArguments();
@@ -104,20 +103,9 @@ public class NvimConnection {
 				.newInstance(this);
 
 			return handlerInstance.handle(request, requestArgs);
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();  // TODO: constructor not defined
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();  // TODO: constructor threw an error
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();  // TODO: constructor not accessible
-		} catch (InstantiationException e) {
-			e.printStackTrace();  // TODO: tried to instantiate an abstract class
-		} catch (ClassCastException e) {
-			e.printStackTrace();  // TODO: failed a cast (usually an argument)
+		} catch (Exception e) {
+			throw new NeovimRequestException(e.getMessage());
 		}
-
-		final var msg = "An exception occurred while processing the request";
-		throw new NeovimRequestException(msg);
 	}
 
 	/** Fetch the project connection object for a given project path.
