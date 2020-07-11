@@ -66,6 +66,7 @@ call s:connect()
 
 " Some commands for playing around with
 command! GradleNoOp :echo rpcrequest(g:gradle.job_id, 'request', 'no-op')
+command! GradleNoOp :echo luaeval('require"gradle".noOp()')
 command! GradleHandshake :echo luaeval('require"gradle".handshake()')
 command! GradleThrow :call luaeval('require"gradle".throwUp()')
 command! GradleTasks :call s:list_tasks()

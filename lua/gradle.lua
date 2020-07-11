@@ -28,6 +28,22 @@ function M.handshake()
 end
 
 
+--- Perform no action
+--
+-- A no-operation function which does connect to the remote plugin, but does
+-- nothing else on the Java side. This function is *not* free of side effects,
+-- it goes through the entire Java processing chain as any other of its sibling
+-- functions do.
+--
+-- @return
+--   Always returns `vim.NIL`, because it does nothing. Note that this is
+--   different from returning a Lua `nil`.
+function M.noOp()
+	local job = vim.g.gradle.job_id
+	return vim.fn.rpcrequest(job, 'request', 'no-op')
+end
+
+
 --- Intentionally throw an exception.
 --
 -- This function always throws and exception. It is not very useful, but it can
