@@ -8,6 +8,7 @@ local M = {}
 
 local callbacks = {}
 
+
 -- work in process, do not use!
 function M.runTask(task, args, callback)
 	local job = vim.g.gradle.job_id
@@ -15,6 +16,7 @@ function M.runTask(task, args, callback)
 	callbacks.timestamp = callback
 	vim.fn.rpcnotify(job, 'notify', 'run-task', vim.fn.getcwd(), task, args, timestamp)
 end
+
 
 --- Perform a handshake with the remote plugin
 --
@@ -24,6 +26,17 @@ function M.handshake()
 	local job = vim.g.gradle.job_id
 	return vim.fn.rpcrequest(job, 'request', 'handshake')
 end
+
+
+--- Intentionally throw an exception.
+--
+-- This function always throws and exception. It is not very useful, but it can
+-- be used for testing that exceptions are handled correctly.
+function M.throwUp()
+	local job = vim.g.gradle.job_id
+	vim.fn.rpcrequest(job, 'request', 'throw-up')
+end
+
 
 --- Returns a list of all the tasks of a project.
 --
@@ -35,5 +48,6 @@ function M.getTasks(cwd)
 	local job = vim.g.gradle.job_id
 	return vim.fn.rpcrequest(job, 'request', 'get-tasks', cwd)
 end
+
 
 return M

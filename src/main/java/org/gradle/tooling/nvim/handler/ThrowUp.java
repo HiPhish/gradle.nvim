@@ -11,13 +11,15 @@ import org.gradle.tooling.nvim.RequestHandler;
  * indeed thrown.
  */
 public class ThrowUp extends RequestHandler {
+	private static final String message =
+		"Exception intentionally thrown from Gradle remote plugin.";
+
 	public ThrowUp(NvimConnection connection) {
 		super(connection);
 	}
 	
 	@Override
 	public Object handle(String request, Object ... args) throws NeovimRequestException {
-		final var message = "Exception intentionally thrown.";
 		throw new NeovimRequestException(message);
 	}
 }
