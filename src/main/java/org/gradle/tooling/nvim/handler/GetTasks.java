@@ -2,6 +2,7 @@ package org.gradle.tooling.nvim.handler;
 
 import java.io.FileNotFoundException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -48,12 +49,17 @@ public class GetTasks extends RequestHandler {
 			.getAll();
 	}
 
-	private List<String> taskToSpec(GradleTask task) {
+	private Map<String, String> taskToSpec(GradleTask task) {
 		final var name = task.getName();
 		final var desc = Optional.of(task).map(GradleTask::getDescription).orElse("");
 		final var path = task.getPath();
 		final var group = task.getGroup();
 
-		return List.of(name, desc, path, group);
+		return Map.of(
+			"name", name,
+			"description", desc,
+			"path", path,
+			"group", group
+		);
 	}
 }
