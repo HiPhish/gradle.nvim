@@ -32,7 +32,7 @@ function! s:list_tasks()
 endfunction
 
 function! s:run_task(task)
-	call rpcrequest(g:gradle.job_id, 'request', 'run-task', getcwd(), a:task)
+	call luaeval('require"gradle".runTask(_A)', a:task)
 endfunction
 
 

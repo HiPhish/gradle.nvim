@@ -6,15 +6,21 @@
 -- module.
 local M = {}
 
-local callbacks = {}
+local state = require 'gradle.state'
 
 
 -- work in process, do not use!
-function M.runTask(task, args, callback)
+function M.runTask(task, args, callbacks)
 	local job = vim.g.gradle.job_id
 	local timestamp = vim.fn.reltimestr(vim.fn.reltime())
-	callbacks.timestamp = callback
-	vim.fn.rpcnotify(job, 'notify', 'run-task', vim.fn.getcwd(), task, args, timestamp)
+
+	if callbacks then
+		for event, callback in pairs(callbacks) do
+			state.registerCallback(timestamp, event, callback)
+		end
+	end
+
+	vim.fn.rpcrequest(job, 'request', 'run-task', vim.fn.getcwd(), task, args, timestamp)
 end
 
 
@@ -56,7 +62,9 @@ end
 
 --- Returns a list of all the tasks of a project.
 --
--- @param cwd The working directory of the project
+-- @param cwd
+--   The working directory of the project
+--
 -- @return
 --   A list (sequence) of tasks. Each task is a table with the following
 --   keys: name, description, path and group. Each value of a task is a string.

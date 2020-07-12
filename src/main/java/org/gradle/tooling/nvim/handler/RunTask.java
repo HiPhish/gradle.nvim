@@ -2,6 +2,7 @@ package org.gradle.tooling.nvim.handler;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 import com.ensarsarajcic.neovim.java.handler.errors.NeovimRequestException;
 
@@ -40,6 +41,7 @@ public class RunTask extends RequestHandler {
 
 			try {
 				connection.notify("nvim_command", command);
+				// connection.notify("nvim_call_function", "gradle#OnTaskStep", List.of());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
